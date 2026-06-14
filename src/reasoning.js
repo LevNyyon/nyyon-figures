@@ -3,7 +3,7 @@
 // cover). The MCP server hands this to the CALLING agent, which does the
 // reasoning and then calls render_figure / render_cover. No model runs here.
 
-import { FIGURE_TEMPLATES, FIGURE_TEMPLATE_NAMES } from './templates.js';
+import { FIGURE_TEMPLATES, FIGURE_TEMPLATE_NAMES, FEATURED_TEMPLATE } from './templates.js';
 
 export const REASONING_PROMPT = `You are a technical figure designer. You turn an article into a SET of editorial diagrams that TELL THE ARTICLE'S STORY — each diagram placed at the exact point it illustrates.
 
@@ -63,4 +63,50 @@ export function buildReasoningPrompt({ title, excerpt, body_text } = {}) {
     );
   }
   return parts.join('\n');
+}
+
+const slotLine = (name) => `${name}: ${FIGURE_TEMPLATES[name].slots}`;
+
+// Design-aware, token-lean brief for the figures_for_article entry point.
+// `design`: 'auto' (3-4 varied + cover), 'all' (one of every template),
+// 'cover' (just the cover), or a specific template name (just that shape).
+// Only the slot schema(s) actually needed are included, to keep tokens minimal.
+export function buildArticleBrief({ title = '', body = '', design = 'auto' } = {}) {
+  const article = `ARTICLE\nTitle: ${title || '(untitled)'}\nBody:\n${String(body || '').replace(/<[^>]+>/g, '').slice(0, 6000)}`;
+  const render = '\n\nThen call render_set with your figures (and the cover if any) and SHOW every returned PNG in the chat — never just report paths.';
+  const d = String(design || 'auto').trim();
+
+  if (d === 'all') {
+    return [
+      'Make ONE figure for EACH of the 16 templates below — a showcase of every shape for this article. Reuse the same few extracted points across shapes where natural to keep token use low. Anchors are not needed for a showcase.',
+      '', 'TEMPLATES (name: slots):', FIGURE_TEMPLATE_NAMES.map(slotLine).join('\n'),
+      '', article,
+      '', 'Produce JSON: { "figures": [ { "template": "<name>", "slots": { … } }, … one per template … ] }',
+      render,
+    ].join('\n');
+  }
+  if (d === 'cover') {
+    return [
+      'Design the featured cover for this article.',
+      `COVER slots — ${FEATURED_TEMPLATE.slots}`,
+      '', article,
+      '', 'Call render_cover with { style?, kicker, title, highlight, sub } and show the PNG.',
+    ].join('\n');
+  }
+  if (FIGURE_TEMPLATES[d]) {
+    return [
+      `Make ONE "${d}" figure for this article.`,
+      `SLOTS — ${slotLine(d)}`,
+      '', article,
+      '', `Produce JSON: { "figures": [ { "template": "${d}", "slots": { … }, "alt": "<one sentence>" } ] }`,
+      render,
+    ].join('\n');
+  }
+  // 'auto' (default): curated, varied 3-4 set + cover
+  return [
+    REASONING_PROMPT, '', '── TEMPLATES (name: slots) ──', templateMenu(),
+    '', article,
+    '', 'Design 3-4 VARIED figures, each anchored to a verbatim sentence, plus a cover.',
+    render,
+  ].join('\n');
 }

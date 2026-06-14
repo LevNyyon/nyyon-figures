@@ -3,23 +3,32 @@
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { dirname, join, isAbsolute } from 'node:path';
 import { initWasm, Resvg } from '@resvg/resvg-wasm';
 
-import { FONT_FILES } from './settings.js';
+import { FONT_FILES, DEFAULT_FONT_FAMILY } from './settings.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
+// A font file is either an absolute path or a filename under assets/fonts.
+const fontPath = (f) => (isAbsolute(f) ? f : join(ROOT, 'assets', 'fonts', f));
+
 let ready = null;
 let fontBuffers = null;
+let loadedRef = null;   // identity of the FONT_FILES array we last loaded
 
 async function ensureReady() {
   if (!ready) {
     const wasm = readFileSync(join(ROOT, 'node_modules/@resvg/resvg-wasm/index_bg.wasm'));
     ready = initWasm(wasm);
-    fontBuffers = FONT_FILES.map((f) => readFileSync(join(ROOT, 'assets', 'fonts', f)));
   }
   await ready;
+  // FONT_FILES is a live binding; set_theme reassigns it to a new array, so
+  // reload the buffers whenever the array identity changes.
+  if (loadedRef !== FONT_FILES) {
+    fontBuffers = FONT_FILES.map((f) => readFileSync(fontPath(f)));
+    loadedRef = FONT_FILES;
+  }
 }
 
 // svg string + intended logical width → PNG Buffer (rendered at 2x for crispness).
@@ -34,7 +43,7 @@ export async function renderPng(svg, width) {
   await ensureReady();
   const resvg = new Resvg(svg, {
     fitTo: { mode: 'width', value: width * 2 },
-    font: { fontBuffers, loadSystemFonts: false, defaultFontFamily: 'Inter' },
+    font: { fontBuffers, loadSystemFonts: false, defaultFontFamily: DEFAULT_FONT_FAMILY },
   });
   return Buffer.from(resvg.render().asPng());
 }

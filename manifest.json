@@ -19,9 +19,10 @@
     }
   },
   "tools": [
+    { "name": "figures_for_article", "description": "START HERE: article in → a brief for the chosen design (auto / all / cover / a template), then render." },
     { "name": "list_templates", "description": "List the 16 diagram templates + cover with their slot schemas." },
-    { "name": "get_reasoning_prompt", "description": "Get the prompt for turning an article into a figure set + cover." },
-    { "name": "get_settings", "description": "Get the active brand theme (colors, fonts, sizes, overrides)." },
+    { "name": "get_settings", "description": "Get the active theme (colors, fonts, sizes, brand)." },
+    { "name": "set_theme", "description": "Adjust the global design — colors/fonts/brand — for all later renders." },
     { "name": "render_figure", "description": "Render one diagram from a template + slots to a PNG." },
     { "name": "render_cover", "description": "Render the 1200x630 featured cover from title/kicker/highlight/sub." },
     { "name": "render_set", "description": "Render a whole figure set + cover in one call." }

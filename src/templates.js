@@ -723,65 +723,102 @@ function wrapTitle(title, maxWidth, size, hotSet) {
   return lines;
 }
 
+const COVER_W2 = 1200, COVER_H2 = 630;
+
+function coverTitleLines(slots, maxW, baseSize) {
+  const title = String(slots.title || '').trim().slice(0, 220);
+  const hotSet = new Set(
+    String(slots.highlight || '').toLowerCase().split(/\s+/).map((w) => w.replace(/[^a-z0-9]/g, '')).filter(Boolean),
+  );
+  let size = baseSize;
+  let lines = wrapTitle(title, maxW, size, hotSet);
+  while (size > 38 && lines.length > 4) { size -= 4; lines = wrapTitle(title, maxW, size, hotSet); }
+  return { lines, size };
+}
+
+// STYLE "hub" — airy: left headline + right accent hub with kit shapes wired in.
+function buildHubCover(slots) {
+  const Wc = COVER_W2, Hc = COVER_H2;
+  const p = [`<svg xmlns="http://www.w3.org/2000/svg" width="${Wc}" height="${Hc}" viewBox="0 0 ${Wc} ${Hc}">`];
+  p.push(`<rect width="${Wc}" height="${Hc}" fill="${PAPER}"/>`);
+  p.push(`<rect x="1" y="1" width="${Wc - 2}" height="${Hc - 2}" fill="none" stroke="${LINE}" stroke-width="2"/>`);
+
+  const hub = { x: 1012, y: 318 }, R = 92;
+  const sats = [{ kind: 'sq', x: 1132, y: 168 }, { kind: 'ci', x: 1148, y: 470 }, { kind: 'tri', x: 872, y: 486 }];
+  sats.forEach((s) => p.push(`<line x1="${hub.x}" y1="${hub.y}" x2="${s.x}" y2="${s.y}" stroke="${LINE}" stroke-width="2"/>`));
+  p.push(`<circle cx="${hub.x}" cy="${hub.y}" r="${R}" fill="${ACCENT}"/>`);
+  if (BRAND_MARK) p.push(`<g transform="translate(${hub.x - 24} ${hub.y - 28}) scale(${(56 / 70).toFixed(4)})"><path d="${BRAND_MARK}" fill="${PAPER}"/></g>`);
+  sats.forEach((s) => {
+    if (s.kind === 'sq') p.push(`<rect x="${s.x - 26}" y="${s.y - 26}" width="52" height="52" fill="${PAPER}" stroke="${INK}" stroke-width="2.5"/>`);
+    else if (s.kind === 'ci') p.push(`<circle cx="${s.x}" cy="${s.y}" r="28" fill="${PAPER}" stroke="${INK}" stroke-width="2.5"/>`);
+    else p.push(`<polygon points="${s.x},${s.y - 30} ${s.x + 28},${s.y + 20} ${s.x - 28},${s.y + 20}" fill="${PAPER}" stroke="${INK}" stroke-width="2.5"/>`);
+  });
+
+  p.push(wordmarkAt(64, 90, 30));
+  if (slots.kicker) {
+    p.push(`<rect x="64" y="120" width="13" height="13" fill="${ACCENT}"/>`);
+    p.push(label(88, 131, String(slots.kicker).toUpperCase(), { size: 16, fill: MUTE, mono: true, weight: 700, ls: 3, anchor: 'start' }));
+  }
+  p.push(`<rect x="64" y="162" width="84" height="10" fill="${ACCENT}"/>`);
+
+  const { lines, size } = coverTitleLines(slots, 700, 78);
+  const lineH = Math.round(size * 1.08);
+  const blockTop = Math.round(372 - ((lines.length - 1) * lineH) / 2);
+  lines.forEach((ln, i) => {
+    const tspans = ln.map((t) => `<tspan fill="${t.hot ? ACCENT : INK}">${esc(t.word)}</tspan>`).join(' ');
+    p.push(`<text x="64" y="${blockTop + i * lineH}" font-family="${SANS}" font-weight="700" font-size="${size}" letter-spacing="-1.6" fill="${INK}">${tspans}</text>`);
+  });
+
+  if (slots.sub) p.push(label(64, 572, String(slots.sub), { size: fit(String(slots.sub), 760, 19), fill: MUTE, weight: 500, anchor: 'start' }));
+  p.push(label(Wc - 64, 572, String(BRAND_URL).toUpperCase(), { size: 15, fill: MUTE, mono: true, weight: 700, ls: 2, anchor: 'end' }));
+  p.push('</svg>');
+  return p.join('');
+}
+
+// STYLE "panel" — bold: a solid accent color-block on the right carrying the
+// brand lockup (reversed), big headline on the paper left. Deliberately a very
+// different look from the diagrams and from the hub cover.
+function buildPanelCover(slots) {
+  const Wc = COVER_W2, Hc = COVER_H2;
+  const panelX = 792, panelW = Wc - panelX, pcx = panelX + panelW / 2;
+  const p = [`<svg xmlns="http://www.w3.org/2000/svg" width="${Wc}" height="${Hc}" viewBox="0 0 ${Wc} ${Hc}">`];
+  p.push(`<rect width="${Wc}" height="${Hc}" fill="${PAPER}"/>`);
+  p.push(`<rect x="${panelX}" y="0" width="${panelW}" height="${Hc}" fill="${ACCENT}"/>`);
+
+  // left: kicker
+  if (slots.kicker) {
+    p.push(`<rect x="72" y="104" width="13" height="13" fill="${ACCENT}"/>`);
+    p.push(label(96, 115, String(slots.kicker).toUpperCase(), { size: 16, fill: MUTE, mono: true, weight: 700, ls: 3, anchor: 'start' }));
+  }
+  // left: headline (one word in accent), vertically centered
+  const maxW = panelX - 72 - 40;
+  const { lines, size } = coverTitleLines(slots, maxW, 74);
+  const lineH = Math.round(size * 1.08);
+  const blockTop = Math.round(338 - ((lines.length - 1) * lineH) / 2);
+  lines.forEach((ln, i) => {
+    const tspans = ln.map((t) => `<tspan fill="${t.hot ? ACCENT : INK}">${esc(t.word)}</tspan>`).join(' ');
+    p.push(`<text x="72" y="${blockTop + i * lineH}" font-family="${SANS}" font-weight="700" font-size="${size}" letter-spacing="-1.4" fill="${INK}">${tspans}</text>`);
+  });
+  if (slots.sub) p.push(label(72, 566, String(slots.sub), { size: fit(String(slots.sub), maxW, 19), fill: MUTE, weight: 500, anchor: 'start' }));
+
+  // right panel: reversed brand lockup (mark + wordmark + url), centered
+  if (BRAND_MARK) {
+    const mh = 96, mw = Math.round(mh * (64 / 70));
+    p.push(`<g transform="translate(${pcx - mw / 2} ${150}) scale(${(mh / 70).toFixed(4)})"><path d="${BRAND_MARK}" fill="${PAPER}"/></g>`);
+  }
+  const nameSize = fit(String(BRAND_NAME), panelW - 56, 42);
+  p.push(label(pcx, BRAND_MARK ? 322 : 300, String(BRAND_NAME), { size: nameSize, fill: PAPER, font: SANS, weight: 700, ls: -0.5, anchor: 'middle' }));
+  p.push(label(pcx, 566, String(BRAND_URL).toUpperCase(), { size: 15, fill: PAPER, mono: true, weight: 700, ls: 2, anchor: 'middle' }));
+
+  p.push(`<rect x="1" y="1" width="${Wc - 2}" height="${Hc - 2}" fill="none" stroke="${LINE}" stroke-width="2"/>`);
+  p.push('</svg>');
+  return p.join('');
+}
+
 export const FEATURED_TEMPLATE = {
   width: 1200, height: 630,
-  slots: 'kicker (<=26 chars caps — a topic/section label), title (the headline, <=90 chars — usually the article title), highlight (optional — one word or short phrase copied EXACTLY from the title, printed in the accent colour, <=24 chars), sub (<=84 chars — one-line standfirst, usually the excerpt)',
-  build(slots) {
-    const Wc = 1200, Hc = 630;
-    const title = String(slots.title || '').trim().slice(0, 220); // cap so wrapTitle can't explode into thousands of lines
-    const hotSet = new Set(
-      String(slots.highlight || '').toLowerCase().split(/\s+/).map((w) => w.replace(/[^a-z0-9]/g, '')).filter(Boolean),
-    );
-    const p = [`<svg xmlns="http://www.w3.org/2000/svg" width="${Wc}" height="${Hc}" viewBox="0 0 ${Wc} ${Hc}">`];
-    p.push(`<rect width="${Wc}" height="${Hc}" fill="${PAPER}"/>`);
-    p.push(`<rect x="1" y="1" width="${Wc - 2}" height="${Hc - 2}" fill="none" stroke="${LINE}" stroke-width="2"/>`);
-
-    // ── right-side motif: kit shapes wired to the accent hub ──
-    const hub = { x: 1012, y: 318 }, R = 92;
-    const sats = [
-      { kind: 'sq',  x: 1132, y: 168 },
-      { kind: 'ci',  x: 1148, y: 470 },
-      { kind: 'tri', x: 872,  y: 486 },
-    ];
-    sats.forEach((s) => p.push(`<line x1="${hub.x}" y1="${hub.y}" x2="${s.x}" y2="${s.y}" stroke="${LINE}" stroke-width="2"/>`));
-    p.push(`<circle cx="${hub.x}" cy="${hub.y}" r="${R}" fill="${ACCENT}"/>`);
-    if (BRAND_MARK) p.push(`<g transform="translate(${hub.x - 24} ${hub.y - 28}) scale(${(56 / 70).toFixed(4)})"><path d="${BRAND_MARK}" fill="${PAPER}"/></g>`);
-    sats.forEach((s) => {
-      if (s.kind === 'sq') p.push(`<rect x="${s.x - 26}" y="${s.y - 26}" width="52" height="52" fill="${PAPER}" stroke="${INK}" stroke-width="2.5"/>`);
-      else if (s.kind === 'ci') p.push(`<circle cx="${s.x}" cy="${s.y}" r="28" fill="${PAPER}" stroke="${INK}" stroke-width="2.5"/>`);
-      else p.push(`<polygon points="${s.x},${s.y - 30} ${s.x + 28},${s.y + 20} ${s.x - 28},${s.y + 20}" fill="${PAPER}" stroke="${INK}" stroke-width="2.5"/>`);
-    });
-
-    // ── top bar: wordmark + kicker ──
-    p.push(wordmarkAt(64, 90, 30));
-    if (slots.kicker) {
-      p.push(`<rect x="64" y="120" width="13" height="13" fill="${ACCENT}"/>`);
-      p.push(label(88, 131, String(slots.kicker).toUpperCase(), { size: 16, fill: MUTE, mono: true, weight: 700, ls: 3, anchor: 'start' }));
-    }
-    // accent signal rule above the headline
-    p.push(`<rect x="64" y="162" width="84" height="10" fill="${ACCENT}"/>`);
-
-    // ── headline: wrapped, highlight word in accent ──
-    const maxW = 700;
-    let size = 78;
-    let lines = wrapTitle(title, maxW, size, hotSet);
-    while (size > 40 && lines.length > 4) { size -= 4; lines = wrapTitle(title, maxW, size, hotSet); }
-    const lineH = Math.round(size * 1.08);
-    const blockTop = Math.round(372 - ((lines.length - 1) * lineH) / 2);
-    lines.forEach((ln, i) => {
-      const ly = blockTop + i * lineH;
-      const tspans = ln.map((t) => `<tspan fill="${t.hot ? ACCENT : INK}">${esc(t.word)}</tspan>`).join(' ');
-      p.push(`<text x="64" y="${ly}" font-family="${SANS}" font-weight="700" font-size="${size}" letter-spacing="-1.6" fill="${INK}">${tspans}</text>`);
-    });
-
-    // ── footer: standfirst + URL ──
-    if (slots.sub) {
-      const s = String(slots.sub);
-      p.push(label(64, 572, s, { size: fit(s, 760, 19), fill: MUTE, weight: 500, anchor: 'start' }));
-    }
-    p.push(label(Wc - 64, 572, String(BRAND_URL).toUpperCase(), { size: 15, fill: MUTE, mono: true, weight: 700, ls: 2, anchor: 'end' }));
-
-    p.push('</svg>');
-    return p.join('');
+  slots: 'style (optional: "panel" = bold accent color-block cover [default], or "hub" = airy hub-and-shapes cover), kicker (<=26 chars caps — a topic/section label), title (the headline, <=90 chars), highlight (optional — one word/phrase copied EXACTLY from the title, printed in the accent colour, <=24 chars), sub (<=84 chars — one-line standfirst)',
+  build(slots = {}) {
+    return slots.style === 'hub' ? buildHubCover(slots) : buildPanelCover(slots);
   },
 };

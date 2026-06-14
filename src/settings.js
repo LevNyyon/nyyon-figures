@@ -1,51 +1,79 @@
-// Global brand settings for nyyon-figures. Edit here to re-theme every diagram
-// and the cover at once. The accent is a single token used as a "signal"; it
-// can also be overridden at runtime via the NYYON_FIGURES_ACCENT env var.
+// Global theme + render settings. EVERYTHING here is overridable three ways:
+//   1. env vars (NYYON_FIGURES_*) at startup,
+//   2. editing the defaults below,
+//   3. the set_theme tool at runtime (adjusts the GLOBAL look for all later renders).
+// The shipped DEFAULTS are a neutral editorial look — slate ink on white, a blue
+// accent, IBM Plex Sans/Mono — intentionally NOT nyyon's brand.
+//
+// The themeable tokens are `export let` so set_theme can reassign them; ES module
+// live bindings mean templates.js/render.js see the change with no extra wiring.
 
-export const PAPER       = process.env.NYYON_FIGURES_PAPER  || '#FAFAF9'; // warm paper background
-export const INK         = process.env.NYYON_FIGURES_INK    || '#0A0A0A'; // near-black, primary
-export const MUTE        = '#78716C'; // warm gray, secondary text
-export const LINE        = '#E7E5E4'; // hairlines / faint strokes
-export const CARDHI      = '#F5F5F4'; // subtle card fill
-export const ACCENT      = process.env.NYYON_FIGURES_ACCENT || '#6C5CE7'; // THE accent — cool blue-violet (nyyonai brand)
-export const ACCENT_WASH = '#ECE9FD'; // faint accent wash
+const env = process.env;
+const HEX = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 
-export const SANS = 'Inter';
-export const MONO = 'JetBrains Mono';
+// ── colors (overridable) ──
+export let PAPER       = env.NYYON_FIGURES_PAPER       || '#FFFFFF';
+export let INK         = env.NYYON_FIGURES_INK         || '#111827';
+export let MUTE        = env.NYYON_FIGURES_MUTE        || '#6B7280';
+export let LINE        = env.NYYON_FIGURES_LINE        || '#E5E7EB';
+export let CARDHI      = env.NYYON_FIGURES_CARDHI      || '#F3F4F6';
+export let ACCENT      = env.NYYON_FIGURES_ACCENT      || '#2563EB';
+export let ACCENT_WASH = env.NYYON_FIGURES_ACCENT_WASH || '#DBEAFE';
 
-// ── brand lockup for the featured cover ──
-// The diagrams are brand-agnostic; only the cover carries a wordmark + URL.
-// These default to nyyon but are fully overridable so the cover works for any
-// brand (or none). BRAND_MARK is an SVG path drawn in a ~64x70 box; set it to
-// "" for a text-only wordmark and a plain accent hub.
-export const BRAND_NAME = process.env.NYYON_FIGURES_BRAND_NAME || 'nyyon';
-export const BRAND_URL  = process.env.NYYON_FIGURES_BRAND_URL  || 'nyyon.com';
-export const BRAND_MARK = process.env.NYYON_FIGURES_BRAND_MARK
+// ── fonts (family names + the TTF files resvg loads; overridable) ──
+export let SANS = env.NYYON_FIGURES_FONT_SANS || 'IBM Plex Sans';
+export let MONO = env.NYYON_FIGURES_FONT_MONO || 'IBM Plex Mono';
+export let FONT_FILES = env.NYYON_FIGURES_FONT_FILES
+  ? env.NYYON_FIGURES_FONT_FILES.split(',').map((s) => s.trim()).filter(Boolean)
+  : ['IBMPlexSans-Regular.ttf', 'IBMPlexSans-SemiBold.ttf', 'IBMPlexSans-Bold.ttf', 'IBMPlexMono-Medium.ttf', 'IBMPlexMono-Bold.ttf'];
+export let DEFAULT_FONT_FAMILY = env.NYYON_FIGURES_FONT_DEFAULT || SANS;
+
+// ── brand lockup for the featured cover (separate from the theme) ──
+export let BRAND_NAME = env.NYYON_FIGURES_BRAND_NAME || 'nyyon';
+export let BRAND_URL  = env.NYYON_FIGURES_BRAND_URL  || 'nyyon.com';
+export let BRAND_MARK = env.NYYON_FIGURES_BRAND_MARK
   ?? 'M33,0 L64,0 L64,66 L33,50 L33,0 Z M0,4 L31,20 L31,70 L0,70 L0,4 Z';
 
-export const W = 1200, H = 675;             // figure canvas (16:9)
-export const COVER_W = 1200, COVER_H = 630; // featured cover (OG ratio)
+// ── canvas (fixed) ──
+export const W = 1200, H = 675;
+export const COVER_W = 1200, COVER_H = 630;
 
-// Font files (relative to the package root) registered with resvg at render.
-export const FONT_FILES = [
-  'Inter-Regular.ttf', 'Inter-SemiBold.ttf', 'Inter-Bold.ttf',
-  'JetBrainsMono-Medium.ttf', 'JetBrainsMono-Bold.ttf',
-];
+// ── runtime global adjustment ──
+function hex(name, v) {
+  if (!HEX.test(String(v))) throw new Error(`set_theme: ${name} must be a hex colour like #2563EB (got ${JSON.stringify(v)})`);
+  return String(v);
+}
 
-// A read-only snapshot of the active theme — surfaced by the get_settings tool.
-export const SETTINGS = {
-  about: 'General editorial-diagram + cover renderer. Paper/ink system with a single accent. Brand-themeable; defaults to nyyon\'s look.',
-  colors: { paper: PAPER, ink: INK, mute: MUTE, line: LINE, cardHigh: CARDHI, accent: ACCENT, accentWash: ACCENT_WASH },
-  fonts:  { sans: SANS, mono: MONO, files: FONT_FILES },
-  canvas: { figure: { w: W, h: H }, cover: { w: COVER_W, h: COVER_H } },
-  brand:  { name: BRAND_NAME, url: BRAND_URL, hasMark: !!BRAND_MARK },
-  overrides: {
-    NYYON_FIGURES_ACCENT:     'override the accent hex',
-    NYYON_FIGURES_PAPER:      'override the paper/background hex',
-    NYYON_FIGURES_INK:        'override the ink/foreground hex',
-    NYYON_FIGURES_BRAND_NAME: 'wordmark text on the cover (default "nyyon")',
-    NYYON_FIGURES_BRAND_URL:  'URL printed on the cover (default "nyyon.com")',
-    NYYON_FIGURES_BRAND_MARK: 'SVG path (~64x70 box) for the logo mark; "" = text-only wordmark',
-    NYYON_FIGURES_OUT:        'directory to write rendered PNGs into',
-  },
-};
+// Adjust the GLOBAL theme for all subsequent renders. Returns the new snapshot.
+export function setTheme(patch = {}) {
+  if (patch.paper       !== undefined) PAPER       = hex('paper', patch.paper);
+  if (patch.ink         !== undefined) INK         = hex('ink', patch.ink);
+  if (patch.mute        !== undefined) MUTE        = hex('mute', patch.mute);
+  if (patch.line        !== undefined) LINE        = hex('line', patch.line);
+  if (patch.cardHigh    !== undefined) CARDHI      = hex('cardHigh', patch.cardHigh);
+  if (patch.accent      !== undefined) ACCENT      = hex('accent', patch.accent);
+  if (patch.accentWash  !== undefined) ACCENT_WASH = hex('accentWash', patch.accentWash);
+  if (patch.sans        !== undefined) SANS        = String(patch.sans);
+  if (patch.mono        !== undefined) MONO        = String(patch.mono);
+  if (patch.fontFiles   !== undefined) {
+    if (!Array.isArray(patch.fontFiles) || !patch.fontFiles.length) throw new Error('set_theme: fontFiles must be a non-empty array of TTF paths/names');
+    FONT_FILES = patch.fontFiles.map(String);   // render.js reloads buffers when this array identity changes
+  }
+  if (patch.fontDefault !== undefined) DEFAULT_FONT_FAMILY = String(patch.fontDefault);
+  if (patch.brandName   !== undefined) BRAND_NAME = String(patch.brandName);
+  if (patch.brandUrl    !== undefined) BRAND_URL  = String(patch.brandUrl);
+  if (patch.brandMark   !== undefined) BRAND_MARK = String(patch.brandMark);
+  return snapshot();
+}
+
+// A live snapshot of the active theme — surfaced by get_settings.
+export function snapshot() {
+  return {
+    about: 'General editorial-diagram + cover renderer. Neutral default theme (slate/blue on white, IBM Plex); re-themeable at startup (env), in code, or at runtime (set_theme).',
+    colors: { paper: PAPER, ink: INK, mute: MUTE, line: LINE, cardHigh: CARDHI, accent: ACCENT, accentWash: ACCENT_WASH },
+    fonts:  { sans: SANS, mono: MONO, defaultFamily: DEFAULT_FONT_FAMILY, files: FONT_FILES },
+    canvas: { figure: { w: W, h: H }, cover: { w: COVER_W, h: COVER_H } },
+    brand:  { name: BRAND_NAME, url: BRAND_URL, hasMark: !!BRAND_MARK },
+    adjust: 'set_theme changes any of these globally for later renders; env NYYON_FIGURES_* sets them at startup.',
+  };
+}

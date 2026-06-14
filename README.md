@@ -18,19 +18,23 @@ Each uses the accent as a *signal*: the `FIG.` mark, the primary arrowheads, and
 
 | tool | what it does |
 |------|--------------|
-| `list_templates` | List all templates + the cover with their slot schemas. Call first. |
-| `get_reasoning_prompt` | Get the figure-design prompt (pass the article to embed it). Use it to produce the figure-spec JSON. |
-| `get_settings` | The active theme — colors, fonts, sizes, env overrides. |
+| `figures_for_article` | **Start here.** Article + a `design` (`auto` / `all` / `cover` / a template name) → a short brief telling you exactly what to produce, then render. Token-lean: a specific design returns only that template's schema. |
+| `list_templates` | List all templates + the cover with their slot schemas. |
+| `get_settings` | The active theme — colors, fonts, sizes, brand (reflects runtime changes). |
+| `set_theme` | Adjust the global look — colors / fonts / brand — for all later renders. |
 | `render_figure` | `{ template, slots }` → a diagram PNG. Returns the file path. |
-| `render_cover` | `{ title, kicker?, highlight?, sub? }` → the 1200×630 cover PNG. |
+| `render_cover` | `{ title, kicker?, highlight?, sub?, style? }` → the 1200×630 cover PNG. |
 | `render_set` | A whole article set (`figures[]` + optional `cover`) in one call. |
 
-## Typical flow
+## Two ways to use it
 
-1. `get_reasoning_prompt` with the article → reason out the figure set + cover as JSON (per the prompt).
-2. `render_set` with that JSON → PNGs written locally; embed them in the post and use the cover as the featured/OG image.
+**Article → figures:**
+1. `figures_for_article` with the article + `design` → follow the returned brief to produce the spec.
+2. `render_set` (or `render_cover`) → PNGs written locally; embed them, use the cover as featured/OG. Show the renders.
 
-(Or call `render_figure` / `render_cover` directly when you already have a spec.)
+**Ad-hoc one-off** — just call `render_figure` directly, e.g. *"a venn of X and Y overlapping Z"* → `{ template: "venn", slots: { left_label: "X", right_label: "Y", overlap_label: "Z" } }`. No article needed.
+
+Re-theme anytime with `set_theme` (or env / `src/settings.js`).
 
 ## Install (Claude / MCP)
 
