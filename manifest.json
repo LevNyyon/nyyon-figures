@@ -3,8 +3,8 @@
   "name": "nyyon-figures",
   "display_name": "Nyyon Figures",
   "version": "0.3.0",
-  "description": "Render editorial diagrams and featured covers from a spec — locally, no network, no model. Brand-themeable; defaults to nyyon's look.",
-  "long_description": "A local, offline renderer for clean editorial diagrams. Ships 16 parametric diagram templates (contrast, layers, cycle, fanout, columns, grid, funnel, timeline, quadrant, pyramid, venn, table, pipeline, radial, bigstat, progression) plus a 1200x630 featured cover, brand-themeable global settings (paper/ink with a single accent — colors, accent, wordmark and URL all overridable; nyyon's look is the default), and the reasoning prompt that maps an article to a figure set. The calling assistant reads the reasoning prompt, picks the templates and fills the slots, then calls the render tools — which rasterize SVG to PNG at 2x via resvg and write the files locally. Nothing leaves the machine.",
+  "description": "Render editorial diagrams and featured covers from a spec — locally, no network, no model. Neutral default theme; fully re-themeable (colors, fonts, brand).",
+  "long_description": "A local, offline renderer for clean editorial diagrams. Ships 16 parametric diagram templates (contrast, layers, cycle, fanout, columns, grid, funnel, timeline, quadrant, pyramid, venn, table, pipeline, radial, bigstat, progression) plus a 1200x630 featured cover, themeable global settings (paper/ink with a single accent — colors, fonts, wordmark and URL all overridable at startup, in code, or at runtime via set_theme; the default is a neutral slate/blue + IBM Plex look, not any specific brand), an article→figures flow, ad-hoc one-off rendering, and the reasoning prompt that maps an article to a figure set. The calling assistant decides which templates/slots to use, then calls the render tools — which rasterize SVG to PNG at 2x via resvg and write the files locally. Nothing leaves the machine.",
   "author": {
     "name": "Nyyon",
     "url": "https://github.com/LevNyyon"

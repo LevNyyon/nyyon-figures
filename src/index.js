@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// nyyon-figures — a local MCP server that renders nyyon's editorial diagrams and
-// featured covers from a spec. It ships three things: the TEMPLATES (16 diagram
-// shapes + a cover), the global brand SETTINGS (paper/ink + one cool-purple
-// accent), and the REASONING prompt (how to map an article to a figure set).
+// nyyon-figures — a local MCP server that renders editorial diagrams and featured
+// covers from a spec, for any brand. It ships: the TEMPLATES (16 diagram shapes +
+// a cover), the global SETTINGS (paper/ink + one accent; neutral defaults,
+// re-themeable at startup/runtime), and the REASONING prompt (article → figures).
 //
 // It does no network calls and runs no model: the calling agent reads the
 // reasoning prompt, decides which templates/slots to use, then calls the render
