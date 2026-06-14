@@ -52,7 +52,7 @@ function jsonContent(obj) {
 }
 
 const server = new McpServer(
-  { name: 'nyyon-figures', version: '0.2.1' },
+  { name: 'nyyon-figures', version: '0.3.0' },
   {
     instructions:
       'Two ways in. (1) ARTICLE → figures: call figures_for_article (article text + a `design`: "auto" | "all" | "cover" | a template name); it returns a short brief — follow it, then call render_set / render_cover. (2) AD-HOC one-off ("make a venn of X and Y overlapping Z", "a 3-step pipeline of A→B→C"): skip the article flow — map the request to a template + slots (see list_templates) and call render_figure directly. Adjust the global look anytime with set_theme (colors/fonts/brand) — it applies to all later renders. ALWAYS show every rendered PNG inline in the chat; never just report paths.',
