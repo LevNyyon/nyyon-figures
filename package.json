@@ -1,0 +1,22 @@
+{
+  "name": "nyyon-figures",
+  "version": "0.1.0",
+  "description": "Local MCP server that renders nyyon's editorial diagrams and featured covers from a spec — 16 templates, brand settings, and the figure-design reasoning prompt.",
+  "type": "module",
+  "bin": {
+    "nyyon-figures": "src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node smoke-test.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.29.0",
+    "@resvg/resvg-wasm": "2.6.2",
+    "zod": "3.25.76"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT"
+}
