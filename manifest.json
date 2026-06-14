@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "nyyon-figures",
   "display_name": "Nyyon Figures",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Render nyyon's editorial diagrams and featured covers from a spec — locally, no network, no model.",
   "long_description": "A local, offline renderer for nyyon's brand visual system. Ships 16 parametric diagram templates (contrast, layers, cycle, fanout, columns, grid, funnel, timeline, quadrant, pyramid, venn, table, pipeline, radial, bigstat, progression) plus a 1200x630 featured cover, the global brand settings (paper/ink with a single cool-purple accent), and the reasoning prompt that maps an article to a figure set. The calling assistant reads the reasoning prompt, picks the templates and fills the slots, then calls the render tools — which rasterize SVG to PNG at 2x via resvg and write the files locally. Nothing leaves the machine.",
   "author": {

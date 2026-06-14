@@ -23,7 +23,14 @@ async function ensureReady() {
 }
 
 // svg string + intended logical width → PNG Buffer (rendered at 2x for crispness).
+// Hard cap on SVG size: a well-formed figure is a few KB; anything past 256KB is
+// pathological input (oversized labels / array amplification) and is refused
+// before it can pin the single-threaded rasterizer.
+const MAX_SVG_BYTES = 262144;
+
 export async function renderPng(svg, width) {
+  if (typeof svg !== 'string') throw new Error('renderPng: svg must be a string');
+  if (svg.length > MAX_SVG_BYTES) throw new Error(`figure too large (${svg.length} bytes; max ${MAX_SVG_BYTES}) — inputs likely oversized`);
   await ensureReady();
   const resvg = new Resvg(svg, {
     fitTo: { mode: 'width', value: width * 2 },

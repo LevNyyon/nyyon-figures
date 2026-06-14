@@ -23,7 +23,10 @@ import { PAPER, INK, MUTE, LINE, CARDHI, ACCENT, ACCENT_WASH, SANS, MONO, W, H }
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function esc(s) {
-  return String(s ?? '')
+  // slice before escaping: caps glyph count for every label/word across all
+  // templates + the cover (all text routes through here), so one oversized
+  // slot can't balloon the SVG. Real labels are well under this.
+  return String(s ?? '').slice(0, 2000)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 }
@@ -720,7 +723,7 @@ export const FEATURED_TEMPLATE = {
   slots: 'kicker (<=26 chars caps — a topic/section label), title (the headline, <=90 chars — usually the article title), highlight (optional — one word or short phrase copied EXACTLY from the title, printed in the accent colour, <=24 chars), sub (<=84 chars — one-line standfirst, usually the excerpt)',
   build(slots) {
     const Wc = 1200, Hc = 630;
-    const title = String(slots.title || '').trim();
+    const title = String(slots.title || '').trim().slice(0, 220); // cap so wrapTitle can't explode into thousands of lines
     const hotSet = new Set(
       String(slots.highlight || '').toLowerCase().split(/\s+/).map((w) => w.replace(/[^a-z0-9]/g, '')).filter(Boolean),
     );

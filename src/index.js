@@ -11,9 +11,9 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, isAbsolute } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 
 import { FIGURE_TEMPLATES, FIGURE_TEMPLATE_NAMES, FEATURED_TEMPLATE } from './templates.js';
 import { renderPng } from './render.js';
@@ -27,9 +27,22 @@ function slug(s) {
   return String(s || 'figure').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'figure';
 }
 
-function resolveOut(outPath, fallbackName) {
+// Confine any caller-supplied path to OUT_DIR. resolve() collapses ".." and
+// absorbs absolute paths; we then assert the result stays under the (symlink-
+// resolved) root. Defeats path traversal and absolute-path writes.
+function safeUnder(candidate) {
   mkdirSync(OUT_DIR, { recursive: true });
-  if (outPath) return isAbsolute(outPath) ? outPath : join(OUT_DIR, outPath);
+  const base = realpathSync(OUT_DIR);
+  const r = resolve(base, candidate || '.');
+  if (r !== base && !r.startsWith(base + sep)) {
+    throw new Error('out_path escapes the output directory');
+  }
+  return r;
+}
+
+function resolveOut(outPath, fallbackName) {
+  if (outPath) return safeUnder(outPath);
+  mkdirSync(OUT_DIR, { recursive: true });
   seq += 1;
   return join(OUT_DIR, `${fallbackName}-${Date.now()}-${seq}.png`);
 }
@@ -94,7 +107,7 @@ server.registerTool(
     inputSchema: {
       template: z.enum(FIGURE_TEMPLATE_NAMES),
       slots: z.record(z.any()),
-      out_path: z.string().optional().describe('Optional output path (absolute, or a filename written into the output dir).'),
+      out_path: z.string().max(512).optional().describe('Optional filename or sub-path written INTO the output dir (confined to it).'),
     },
   },
   async ({ template, slots, out_path }) => {
@@ -116,11 +129,11 @@ server.registerTool(
     description:
       'Render the 1200x630 featured/hero cover (OG ratio): the nyyon wordmark, kit shapes wired to an accent hub, and the headline with one word in the accent colour. Returns the file path.',
     inputSchema: {
-      title: z.string().describe('The headline (usually the article title).'),
-      kicker: z.string().optional().describe('Short topic label in caps, e.g. "AI-NATIVE MARKETING".'),
-      highlight: z.string().optional().describe('One word/phrase copied exactly from the title to print in the accent colour.'),
-      sub: z.string().optional().describe('One-line standfirst under the headline.'),
-      out_path: z.string().optional(),
+      title: z.string().max(300).describe('The headline (usually the article title).'),
+      kicker: z.string().max(120).optional().describe('Short topic label in caps, e.g. "AI-NATIVE MARKETING".'),
+      highlight: z.string().max(120).optional().describe('One word/phrase copied exactly from the title to print in the accent colour.'),
+      sub: z.string().max(300).optional().describe('One-line standfirst under the headline.'),
+      out_path: z.string().max(512).optional(),
     },
   },
   async ({ title, kicker, highlight, sub, out_path }) => {
@@ -140,12 +153,17 @@ server.registerTool(
     description:
       'Render a full article set in one call: an array of figures (each { template, slots }) plus an optional cover. Returns the list of written paths. Convenience over calling render_figure repeatedly.',
     inputSchema: {
-      figures: z.array(z.object({ template: z.enum(FIGURE_TEMPLATE_NAMES), slots: z.record(z.any()) })).optional(),
-      cover: z.object({ title: z.string(), kicker: z.string().optional(), highlight: z.string().optional(), sub: z.string().optional() }).optional(),
-      out_dir: z.string().optional().describe('Optional directory for this set (defaults to the server output dir).'),
+      figures: z.array(z.object({ template: z.enum(FIGURE_TEMPLATE_NAMES), slots: z.record(z.any()) })).max(12).optional(),
+      cover: z.object({ title: z.string().max(300), kicker: z.string().max(120).optional(), highlight: z.string().max(120).optional(), sub: z.string().max(300).optional() }).optional(),
+      out_dir: z.string().max(512).optional().describe('Optional sub-directory (confined to the output dir) for this set.'),
     },
   },
   async ({ figures = [], cover, out_dir }) => {
+    // Confine the whole set to a directory under OUT_DIR; filenames are
+    // server-built (never caller-controlled), so nothing escapes.
+    const baseDir = out_dir ? safeUnder(out_dir) : OUT_DIR;
+    mkdirSync(baseDir, { recursive: true });
+    const stamp = out_dir ? '' : `-${Date.now()}`;
     const results = [];
     let i = 0;
     for (const f of figures) {
@@ -153,17 +171,14 @@ server.registerTool(
       if (!tpl) { results.push({ ok: false, template: f.template, error: 'unknown template' }); continue; }
       i += 1;
       const png = await renderPng(tpl.build(f.slots || {}), tpl.width);
-      const name = `fig-${i}-${slug(f.slots?.fig_label || f.template)}.png`;
-      const path = out_dir ? join(isAbsolute(out_dir) ? out_dir : join(OUT_DIR, out_dir), name) : resolveOut(name, 'fig');
-      mkdirSync(join(path, '..'), { recursive: true });
+      const path = join(baseDir, `fig-${i}-${slug(f.slots?.fig_label || f.template)}${stamp}.png`);
       writeFileSync(path, png);
       results.push({ ok: true, template: f.template, path });
     }
     let coverResult = null;
     if (cover) {
       const png = await renderPng(FEATURED_TEMPLATE.build(cover), FEATURED_TEMPLATE.width);
-      const path = out_dir ? join(isAbsolute(out_dir) ? out_dir : join(OUT_DIR, out_dir), 'cover.png') : resolveOut(`${slug(cover.title)}-cover`, 'cover');
-      mkdirSync(join(path, '..'), { recursive: true });
+      const path = join(baseDir, `${slug(cover.title)}-cover${stamp}.png`);
       writeFileSync(path, png);
       coverResult = { ok: true, path };
     }
