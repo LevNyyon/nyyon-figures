@@ -19,7 +19,7 @@
 // All brand tokens (colors, fonts, canvas size) live in ./settings.js — edit
 // there to re-theme. The accent is a single token used as a signal.
 
-import { PAPER, INK, MUTE, LINE, CARDHI, ACCENT, ACCENT_WASH, SANS, MONO, W, H } from './settings.js';
+import { PAPER, INK, MUTE, LINE, CARDHI, ACCENT, ACCENT_WASH, SANS, MONO, W, H, BRAND_NAME, BRAND_URL, BRAND_MARK } from './settings.js';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function esc(s) {
@@ -692,12 +692,17 @@ export const FIGURE_TEMPLATE_NAMES = Object.keys(FIGURE_TEMPLATES);
 // kickers, ink nodes wired by connectors, and the accent as the focal hub —
 // recomposed as a magazine cover. One headline word prints in the accent.
 
-const LOGO_PATH = 'M33,0 L64,0 L64,66 L33,50 L33,0 Z M0,4 L31,20 L31,70 L0,70 L0,4 Z';
-
+// Wordmark = optional brand mark (SVG path in a 64x70 box) + the brand name.
+// With no mark configured, renders text only and shifts the name left.
 function wordmarkAt(x, baselineY, h = 30, markFill = '#262424', textFill = INK) {
-  const mw = Math.round(h * (64 / 70));
-  return `<g transform="translate(${x} ${baselineY - h}) scale(${(h / 70).toFixed(4)})"><path d="${LOGO_PATH}" fill="${markFill}"/></g>`
-       + `<text x="${x + mw + 12}" y="${baselineY - 4}" font-family="${SANS}" font-weight="700" font-size="${Math.round(h * 0.8)}" letter-spacing="-0.5" fill="${textFill}">nyyon</text>`;
+  const hasMark = !!BRAND_MARK;
+  const mw = hasMark ? Math.round(h * (64 / 70)) : 0;
+  const mark = hasMark
+    ? `<g transform="translate(${x} ${baselineY - h}) scale(${(h / 70).toFixed(4)})"><path d="${BRAND_MARK}" fill="${markFill}"/></g>`
+    : '';
+  const tx = x + (hasMark ? mw + 12 : 0);
+  return mark
+       + `<text x="${tx}" y="${baselineY - 4}" font-family="${SANS}" font-weight="700" font-size="${Math.round(h * 0.8)}" letter-spacing="-0.5" fill="${textFill}">${esc(BRAND_NAME)}</text>`;
 }
 
 // Greedy word-wrap. Returns lines (arrays of {word, hot}) where `hot` words are
@@ -740,7 +745,7 @@ export const FEATURED_TEMPLATE = {
     ];
     sats.forEach((s) => p.push(`<line x1="${hub.x}" y1="${hub.y}" x2="${s.x}" y2="${s.y}" stroke="${LINE}" stroke-width="2"/>`));
     p.push(`<circle cx="${hub.x}" cy="${hub.y}" r="${R}" fill="${ACCENT}"/>`);
-    p.push(`<g transform="translate(${hub.x - 24} ${hub.y - 28}) scale(${(56 / 70).toFixed(4)})"><path d="${LOGO_PATH}" fill="${PAPER}"/></g>`);
+    if (BRAND_MARK) p.push(`<g transform="translate(${hub.x - 24} ${hub.y - 28}) scale(${(56 / 70).toFixed(4)})"><path d="${BRAND_MARK}" fill="${PAPER}"/></g>`);
     sats.forEach((s) => {
       if (s.kind === 'sq') p.push(`<rect x="${s.x - 26}" y="${s.y - 26}" width="52" height="52" fill="${PAPER}" stroke="${INK}" stroke-width="2.5"/>`);
       else if (s.kind === 'ci') p.push(`<circle cx="${s.x}" cy="${s.y}" r="28" fill="${PAPER}" stroke="${INK}" stroke-width="2.5"/>`);
@@ -774,7 +779,7 @@ export const FEATURED_TEMPLATE = {
       const s = String(slots.sub);
       p.push(label(64, 572, s, { size: fit(s, 760, 19), fill: MUTE, weight: 500, anchor: 'start' }));
     }
-    p.push(label(Wc - 64, 572, 'NYYON.COM', { size: 15, fill: MUTE, mono: true, weight: 700, ls: 2, anchor: 'end' }));
+    p.push(label(Wc - 64, 572, String(BRAND_URL).toUpperCase(), { size: 15, fill: MUTE, mono: true, weight: 700, ls: 2, anchor: 'end' }));
 
     p.push('</svg>');
     return p.join('');

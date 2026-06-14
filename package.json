@@ -1,7 +1,7 @@
 {
   "name": "nyyon-figures",
-  "version": "0.1.1",
-  "description": "Local MCP server that renders nyyon's editorial diagrams and featured covers from a spec — 16 templates, brand settings, and the figure-design reasoning prompt.",
+  "version": "0.2.0",
+  "description": "Local MCP server that renders editorial diagrams and featured covers from a spec — 16 brand-themeable templates + the figure-design reasoning prompt. Defaults to nyyon's look; re-theme colors, accent, wordmark and URL for any brand.",
   "type": "module",
   "bin": {
     "nyyon-figures": "src/index.js"

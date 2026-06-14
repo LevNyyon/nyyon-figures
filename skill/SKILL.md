@@ -1,11 +1,11 @@
 ---
 name: nyyon-figures
-description: Generate nyyon-brand editorial diagrams and a featured cover for an article or post. Use when the user wants figures, diagrams, illustrations, or a hero/OG/featured image for a blog post or article in nyyon's visual style. Backed by the nyyon-figures MCP server (templates + brand settings + reasoning prompt).
+description: Generate editorial diagrams and a featured cover for an article or post, in a clean paper/ink style with a single accent. Brand-themeable (colors, accent, wordmark, URL) — defaults to nyyon's look, works for any brand. Use when the user wants figures, diagrams, illustrations, or a hero/OG/featured image for a blog post or article. Backed by the nyyon-figures MCP server (templates + brand settings + reasoning prompt).
 ---
 
-# Making nyyon figures for an article
+# Making editorial figures for an article
 
-Use the **nyyon-figures** MCP tools to turn an article into a set of editorial diagrams + a featured cover, in nyyon's paper/ink + cool-purple style. Everything renders locally; you do the design reasoning, the tools draw and write the PNGs.
+Use the **nyyon-figures** MCP tools to turn an article into a set of editorial diagrams + a featured cover, in a clean paper/ink style with a single accent. Everything renders locally; you do the design reasoning, the tools draw and write the PNGs. The look is brand-themeable (see `get_settings` / the `NYYON_FIGURES_*` env vars) and defaults to nyyon.
 
 ## Steps
 

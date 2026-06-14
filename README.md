@@ -1,11 +1,11 @@
 # nyyon-figures
 
-A **local MCP server** that renders nyyon's editorial diagrams and featured covers from a spec. No network, no model, nothing leaves the machine — the calling assistant does the thinking, this tool does the drawing.
+A **local MCP server** that renders editorial diagrams and featured covers from a spec — for *any* brand, not just nyyon. No network, no model, nothing leaves the machine — the calling assistant does the thinking, this tool does the drawing.
 
 It ships three things:
 
-- **Templates** — 16 parametric diagram shapes + a 1200×630 featured cover, drawn as code (SVG → PNG via resvg at 2×).
-- **Settings** — the global brand theme: paper/ink with a single cool-purple accent (`#6C5CE7`), Inter + JetBrains Mono. One token re-themes everything.
+- **Templates** — 16 parametric, content-agnostic diagram shapes + a 1200×630 featured cover, drawn as code (SVG → PNG via resvg at 2×).
+- **Settings** — a brand-themeable paper/ink theme with a single accent. Colors, accent, wordmark and URL are all overridable (file or env); it ships with nyyon's look (`#6C5CE7`, Inter + JetBrains Mono) as the default.
 - **Reasoning prompt** — how to map an article to a *set* of figures (which shape per idea, anchored to the sentence it illustrates, varied across the piece) + a cover.
 
 ## The 16 templates
@@ -56,7 +56,12 @@ Edit `src/settings.js`, or override at runtime via env:
 
 - `NYYON_FIGURES_ACCENT` — accent hex (default `#6C5CE7`)
 - `NYYON_FIGURES_PAPER` / `NYYON_FIGURES_INK` — background / foreground
+- `NYYON_FIGURES_BRAND_NAME` — wordmark text on the cover (default `nyyon`)
+- `NYYON_FIGURES_BRAND_URL` — URL printed on the cover (default `nyyon.com`)
+- `NYYON_FIGURES_BRAND_MARK` — SVG path (~64×70 box) for the logo mark; `""` = text-only wordmark + plain accent hub
 - `NYYON_FIGURES_OUT` — directory for rendered PNGs (default `$TMPDIR/nyyon-figures`)
+
+So a different brand is one line: `NYYON_FIGURES_BRAND_NAME='Acme' NYYON_FIGURES_BRAND_URL='acme.io' NYYON_FIGURES_BRAND_MARK='' NYYON_FIGURES_ACCENT='#0EA5E9'`.
 
 ## Test
 
