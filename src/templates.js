@@ -525,6 +525,38 @@ export const FIGURE_TEMPLATES = {
     },
   },
 
+  // ── three-circle Venn (triple intersection) ─────────────────────────────────
+  venn3: {
+    width: W, height: H,
+    slots: 'fig_label (<=42 chars caps), a_label / b_label / c_label (each <=14 chars caps — the three sets: A top, B bottom-left, C bottom-right), center_label (<=12 chars caps — what ALL THREE share; prints in the accent), ab_label / ac_label / bc_label (optional <=12 chars caps — the pairwise overlaps), caption (optional <=72 chars)',
+    build(slots) {
+      const p = svgOpen();
+      p.push(figLabel(slots.fig_label));
+      const r = 178, cx = W / 2;
+      const A = { x: cx, y: 286 }, B = { x: cx - 96, y: 440 }, C = { x: cx + 96, y: 440 };
+      [A, B, C].forEach((c) =>
+        p.push(`<circle cx="${c.x}" cy="${c.y}" r="${r}" fill="${INK}" fill-opacity="0.05" stroke="${INK}" stroke-width="2.5"/>`));
+      // set labels, each parked in its own non-overlapping lobe
+      const setLbl = (x, y, t) => label(x, y, String(t || '').toUpperCase(),
+        { size: fit(String(t || ''), 150, 18, { mono: true, ls: 1 }), fill: INK, mono: true, weight: 700, ls: 1, anchor: 'middle' });
+      p.push(setLbl(A.x, A.y - 96, slots.a_label));
+      p.push(setLbl(B.x - 74, B.y + 92, slots.b_label));
+      p.push(setLbl(C.x + 74, C.y + 92, slots.c_label));
+      // pairwise overlap labels (muted, optional)
+      const pairLbl = (x, y, t) => t && label(x, y, String(t).toUpperCase(),
+        { size: fit(String(t), 118, 13, { mono: true, ls: 0.5 }), fill: MUTE, mono: true, weight: 500, ls: 0.5, anchor: 'middle' });
+      if (slots.ab_label) p.push(pairLbl(cx - 96, 356, slots.ab_label));
+      if (slots.ac_label) p.push(pairLbl(cx + 96, 356, slots.ac_label));
+      if (slots.bc_label) p.push(pairLbl(cx, 486, slots.bc_label));
+      // triple overlap (the whole point) carries the accent
+      if (slots.center_label) p.push(label(cx, 396, String(slots.center_label).toUpperCase(),
+        { size: fit(String(slots.center_label), 150, 15, { mono: true, ls: 0.5 }), fill: ACCENT, mono: true, weight: 700, ls: 0.5, anchor: 'middle' }));
+      p.push(caption(slots.caption));
+      p.push('</svg>');
+      return p.join('');
+    },
+  },
+
   // ── comparison table (criteria × options) ───────────────────────────────────
   table: {
     width: W, height: H,

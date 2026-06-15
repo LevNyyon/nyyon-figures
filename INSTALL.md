@@ -60,7 +60,7 @@ Replace `<DIR>` with the absolute path from step 1. Optional theming via `"env"`
 
 ## 5. Smoke-test the live tools
 From the MCP client, call:
-1. `list_templates` → **Check:** returns 16 figure templates + a cover.
+1. `list_templates` → **Check:** returns 17 figure templates + a cover.
 2. `render_cover` with `{ "title": "Hello From Nyyon Figures", "kicker": "FIELD NOTE", "highlight": "Nyyon", "sub": "install check" }` → **Check:** returns a `path`; open it and confirm a 1200×630 PNG with a purple hub and the headline.
 
 If both pass, installation is complete.

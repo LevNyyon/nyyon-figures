@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // nyyon-figures — a local MCP server that renders editorial diagrams and featured
-// covers from a spec, for any brand. It ships: the TEMPLATES (16 diagram shapes +
-// a cover), the global SETTINGS (paper/ink + one accent; neutral defaults,
+// covers from a spec, for any brand. It ships: the TEMPLATES (17 diagram shapes +
+// a cover, optionally animated as SVG), the global SETTINGS (paper/ink + one
+// accent; neutral defaults,
 // re-themeable at startup/runtime), and the REASONING prompt (article → figures).
 //
 // It does no network calls and runs no model: the calling agent reads the
@@ -17,6 +18,7 @@ import { join, resolve, sep } from 'node:path';
 
 import { FIGURE_TEMPLATES, FIGURE_TEMPLATE_NAMES, FEATURED_TEMPLATE } from './templates.js';
 import { renderPng } from './render.js';
+import { animateSvg } from './animate.js';
 import { snapshot, setTheme } from './settings.js';
 import { buildArticleBrief } from './reasoning.js';
 
@@ -40,11 +42,19 @@ function safeUnder(candidate) {
   return r;
 }
 
-function resolveOut(outPath, fallbackName) {
+function resolveOut(outPath, fallbackName, ext = 'png') {
   if (outPath) return safeUnder(outPath);
   mkdirSync(OUT_DIR, { recursive: true });
   seq += 1;
-  return join(OUT_DIR, `${fallbackName}-${Date.now()}-${seq}.png`);
+  return join(OUT_DIR, `${fallbackName}-${Date.now()}-${seq}.${ext}`);
+}
+
+// An animated SVG is bigger than a static one but still tiny; this backstops
+// the svg-output path the way MAX_SVG_BYTES backstops the raster path.
+const MAX_SVG_OUT = 768 * 1024;
+function writeSvgOut(svg, path) {
+  if (svg.length > MAX_SVG_OUT) throw new Error(`svg too large (${svg.length} bytes) — inputs likely oversized`);
+  writeFileSync(path, svg);
 }
 
 function jsonContent(obj) {
@@ -52,10 +62,10 @@ function jsonContent(obj) {
 }
 
 const server = new McpServer(
-  { name: 'nyyon-figures', version: '0.3.0' },
+  { name: 'nyyon-figures', version: '0.4.0' },
   {
     instructions:
-      'Two ways in. (1) ARTICLE → figures: call figures_for_article (article text + a `design`: "auto" | "all" | "cover" | a template name); it returns a short brief — follow it, then call render_set / render_cover. (2) AD-HOC one-off ("make a venn of X and Y overlapping Z", "a 3-step pipeline of A→B→C"): skip the article flow — map the request to a template + slots (see list_templates) and call render_figure directly. Adjust the global look anytime with set_theme (colors/fonts/brand) — it applies to all later renders. ALWAYS show every rendered PNG inline in the chat; never just report paths.',
+      'Two ways in. (1) ARTICLE → figures: call figures_for_article (article text + a `design`: "auto" | "all" | "cover" | a template name); it returns a short brief — follow it, then call render_set / render_cover. (2) AD-HOC one-off ("make a venn of X and Y overlapping Z", "a 3-step pipeline of A→B→C"): skip the article flow — map the request to a template + slots (see list_templates) and call render_figure directly. Adjust the global look anytime with set_theme (colors/fonts/brand) — it applies to all later renders. For an ANIMATED figure (entrance/exit + motion, looping, no JS), pass format:"svg" + animate:true to render_figure/render_set — it writes a .svg the browser animates; PNG output is always a static frame. ALWAYS show every rendered figure inline in the chat; never just report paths.',
   },
 );
 
@@ -65,7 +75,7 @@ server.registerTool(
   {
     title: 'List figure templates',
     description:
-      'List every diagram template (16) and the featured cover with their slot schemas. Call this first to learn what shapes exist and exactly which slots each render tool expects.',
+      'List every diagram template (17) and the featured cover with their slot schemas. Call this first to learn what shapes exist and exactly which slots each render tool expects.',
     inputSchema: {},
   },
   async () => jsonContent({
@@ -83,7 +93,7 @@ server.registerTool(
   {
     title: 'Figures for an article',
     description:
-      'START HERE. Give an article (body, optional title) and a `design`, and this returns a short brief telling you exactly what figure spec to produce — then you call render_set (or render_cover) and show the PNGs. design options: "auto" (default — 3-4 varied figures anchored to the article + a cover; the normal use), "all" (one figure of EVERY template, a showcase of all shapes), "cover" (just the featured cover), or a specific template name from list_templates (just that one shape). Token-lean: a specific design returns only that template\'s schema, not all 16.',
+      'START HERE. Give an article (body, optional title) and a `design`, and this returns a short brief telling you exactly what figure spec to produce — then you call render_set (or render_cover) and show the PNGs. design options: "auto" (default — 3-4 varied figures anchored to the article + a cover; the normal use), "all" (one figure of EVERY template, a showcase of all shapes), "cover" (just the featured cover), or a specific template name from list_templates (just that one shape). Token-lean: a specific design returns only that template\'s schema, not all 17.',
     inputSchema: {
       body: z.string().max(60000).describe('The article text.'),
       title: z.string().max(300).optional().describe('Article title (used for the cover headline).'),
@@ -134,21 +144,29 @@ server.registerTool(
   {
     title: 'Render one diagram',
     description:
-      'Render a single diagram to a PNG from a template + slots (see list_templates for each schema). Use this directly for ad-hoc one-off requests — e.g. "make a venn of X and Y overlapping Z" → template:"venn", slots:{left_label:"X", right_label:"Y", overlap_label:"Z"}. No article needed. Returns the file path (rendered at 2x). AFTER rendering, show the PNG inline in the chat — never just report the path.',
+      'Render a single diagram from a template + slots (see list_templates for each schema). Use this directly for ad-hoc one-off requests — e.g. "make a venn of X and Y overlapping Z" → template:"venn", slots:{left_label:"X", right_label:"Y", overlap_label:"Z"}. No article needed. Default output is a 2x PNG; pass format:"svg" (optionally animate:true) for a vector / self-animating figure. Returns the file path. AFTER rendering, show the figure inline in the chat — never just report the path.',
     inputSchema: {
       template: z.enum(FIGURE_TEMPLATE_NAMES),
       slots: z.record(z.any()),
       out_path: z.string().max(512).optional().describe('Optional filename or sub-path written INTO the output dir (confined to it).'),
+      format: z.enum(['png', 'svg']).optional().describe('"png" (default) = static 2x raster. "svg" = vector; required for animation.'),
+      animate: z.boolean().optional().describe('Only with format:"svg". Bakes in an entrance → hold → exit loop (+ motion on timeline/cycle/radial). No JS; loops forever. Default false.'),
     },
   },
-  async ({ template, slots, out_path }) => {
+  async ({ template, slots, out_path, format, animate }) => {
     const tpl = FIGURE_TEMPLATES[template];
     if (!tpl) throw new Error(`unknown template: ${template}`);
-    const svg = tpl.build(slots || {});
+    let svg = tpl.build(slots || {});
+    if ((format || 'png') === 'svg') {
+      if (animate) svg = animateSvg(svg, template);
+      const path = resolveOut(out_path, slug(slots?.fig_label || template), 'svg');
+      writeSvgOut(svg, path);
+      return jsonContent({ ok: true, template, path, format: 'svg', animated: !!animate, width: tpl.width, height: tpl.height, bytes: svg.length });
+    }
     const png = await renderPng(svg, tpl.width);
     const path = resolveOut(out_path, slug(slots?.fig_label || template));
     writeFileSync(path, png);
-    return jsonContent({ ok: true, template, path, width: tpl.width, height: tpl.height, px: `${tpl.width * 2}x${tpl.height * 2}`, bytes: png.length });
+    return jsonContent({ ok: true, template, path, format: 'png', width: tpl.width, height: tpl.height, px: `${tpl.width * 2}x${tpl.height * 2}`, bytes: png.length });
   },
 );
 
@@ -187,23 +205,32 @@ server.registerTool(
       figures: z.array(z.object({ template: z.enum(FIGURE_TEMPLATE_NAMES), slots: z.record(z.any()) })).max(12).optional(),
       cover: z.object({ title: z.string().max(300), kicker: z.string().max(120).optional(), highlight: z.string().max(120).optional(), sub: z.string().max(300).optional() }).optional(),
       out_dir: z.string().max(512).optional().describe('Optional sub-directory (confined to the output dir) for this set.'),
+      format: z.enum(['png', 'svg']).optional().describe('Output for the figures: "png" (default) or "svg". The cover is always PNG (it is an og:image).'),
+      animate: z.boolean().optional().describe('Only with format:"svg". Animate every figure (entrance → hold → exit loop). Default false.'),
     },
   },
-  async ({ figures = [], cover, out_dir }) => {
+  async ({ figures = [], cover, out_dir, format, animate }) => {
     // Confine the whole set to a directory under OUT_DIR; filenames are
     // server-built (never caller-controlled), so nothing escapes.
     const baseDir = out_dir ? safeUnder(out_dir) : OUT_DIR;
     mkdirSync(baseDir, { recursive: true });
     const stamp = out_dir ? '' : `-${Date.now()}`;
+    const asSvg = (format || 'png') === 'svg';
+    const ext = asSvg ? 'svg' : 'png';
     const results = [];
     let i = 0;
     for (const f of figures) {
       const tpl = FIGURE_TEMPLATES[f.template];
       if (!tpl) { results.push({ ok: false, template: f.template, error: 'unknown template' }); continue; }
       i += 1;
-      const png = await renderPng(tpl.build(f.slots || {}), tpl.width);
-      const path = join(baseDir, `fig-${i}-${slug(f.slots?.fig_label || f.template)}${stamp}.png`);
-      writeFileSync(path, png);
+      const path = join(baseDir, `fig-${i}-${slug(f.slots?.fig_label || f.template)}${stamp}.${ext}`);
+      if (asSvg) {
+        let svg = tpl.build(f.slots || {});
+        if (animate) svg = animateSvg(svg, f.template);
+        writeSvgOut(svg, path);
+      } else {
+        writeFileSync(path, await renderPng(tpl.build(f.slots || {}), tpl.width));
+      }
       results.push({ ok: true, template: f.template, path });
     }
     let coverResult = null;

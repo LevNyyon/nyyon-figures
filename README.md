@@ -4,15 +4,19 @@ A **local MCP server** that renders editorial diagrams and featured covers from 
 
 It ships three things:
 
-- **Templates** — 16 parametric, content-agnostic diagram shapes + a 1200×630 featured cover, drawn as code (SVG → PNG via resvg at 2×).
+- **Templates** — 17 parametric, content-agnostic diagram shapes + a 1200×630 featured cover, drawn as code (SVG → PNG via resvg at 2×, or **animated SVG**).
 - **Settings** — a brand-themeable paper/ink theme with a single accent. Colors, accent, wordmark and URL are all overridable (file or env); it ships with nyyon's look (`#6C5CE7`, Inter + JetBrains Mono) as the default.
 - **Reasoning prompt** — how to map an article to a *set* of figures (which shape per idea, anchored to the sentence it illustrates, varied across the piece) + a cover.
 
-## The 16 templates
+## The 17 templates
 
-`contrast` · `layers` · `cycle` · `fanout` · `columns` · `grid` · `funnel` · `timeline` · `quadrant` · `pyramid` · `venn` · `table` · `pipeline` · `radial` · `bigstat` · `progression`
+`contrast` · `layers` · `cycle` · `fanout` · `columns` · `grid` · `funnel` · `timeline` · `quadrant` · `pyramid` · `venn` · `venn3` · `table` · `pipeline` · `radial` · `bigstat` · `progression`
 
 Each uses the accent as a *signal*: the `FIG.` mark, the primary arrowheads, and the single focal "point" of the diagram (the goal node, the source, the winning quadrant, the apex…).
+
+## Animation
+
+Pass `format: "svg"` + `animate: true` to `render_figure` / `render_set` and you get a **self-animating SVG** instead of a flat PNG: every element fades in on a staggered entrance, holds, then exits — one smooth 8s loop, forever. The "traveling" shapes (`timeline`, `cycle`, `radial`) also get an accent dot gliding their path. Pure SVG — SMIL `<animateMotion>` + CSS `@keyframes`, **no JS, no dependencies**, and it honors `prefers-reduced-motion`. Use it for the web/inline; keep PNG for og:images, email, and link previews (animation doesn't survive those, and a rasterized SVG is just its first frame).
 
 ## Tools
 
@@ -22,9 +26,9 @@ Each uses the accent as a *signal*: the `FIG.` mark, the primary arrowheads, and
 | `list_templates` | List all templates + the cover with their slot schemas. |
 | `get_settings` | The active theme — colors, fonts, sizes, brand (reflects runtime changes). |
 | `set_theme` | Adjust the global look — colors / fonts / brand — for all later renders. |
-| `render_figure` | `{ template, slots }` → a diagram PNG. Returns the file path. |
+| `render_figure` | `{ template, slots, format?, animate? }` → a diagram PNG (or animated SVG). Returns the file path. |
 | `render_cover` | `{ title, kicker?, highlight?, sub?, style? }` → the 1200×630 cover PNG. |
-| `render_set` | A whole article set (`figures[]` + optional `cover`) in one call. |
+| `render_set` | A whole article set (`figures[]` + optional `cover`) in one call; `format`/`animate` apply to the figures. |
 
 ## Two ways to use it
 

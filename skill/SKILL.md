@@ -19,7 +19,11 @@ Use the **nyyon-figures** MCP tools to turn an article into a set of editorial d
 
 ## Ad-hoc one-off
 
-For a direct request like *"a venn of X and Y overlapping Z"* or *"a 3-step pipeline A→B→C"*, skip the article flow: map it to a template + slots (see `list_templates`) and call `render_figure` directly, then show the PNG.
+For a direct request like *"a venn of X and Y overlapping Z"* or *"a 3-step pipeline A→B→C"*, skip the article flow: map it to a template + slots (see `list_templates`) and call `render_figure` directly, then show the PNG. For a three-way overlap use `venn3`.
+
+## Animated figures
+
+For web/inline use, pass `format: "svg"` + `animate: true` to `render_figure` / `render_set` → a self-animating SVG (staggered entrance → hold → exit, looping; `timeline`/`cycle`/`radial` also get a gliding accent dot). Pure SVG, no JS. Keep PNG for og:images, email, and link previews — animation doesn't survive those.
 
 ## Adjust the look
 

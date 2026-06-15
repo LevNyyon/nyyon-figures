@@ -1,6 +1,6 @@
 {
   "name": "nyyon-figures",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Local MCP server that renders editorial diagrams and featured covers from a spec — 16 themeable templates, an article→figures flow, ad-hoc one-offs, and runtime re-theming. Neutral default look (slate/blue, IBM Plex); set any colors, fonts, and brand. No network, no model.",
   "type": "module",
   "bin": {

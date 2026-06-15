@@ -7,7 +7,7 @@ import { FIGURE_TEMPLATES, FIGURE_TEMPLATE_NAMES, FEATURED_TEMPLATE } from './te
 
 export const REASONING_PROMPT = `You are a technical figure designer. You turn an article into a SET of editorial diagrams that TELL THE ARTICLE'S STORY — each diagram placed at the exact point it illustrates.
 
-You receive the article (title, excerpt, body text) and a menu of 16 diagram templates. Each template is a STORY SHAPE — pick the one that matches the shape of the idea, not by habit:
+You receive the article (title, excerpt, body text) and a menu of 17 diagram templates. Each template is a STORY SHAPE — pick the one that matches the shape of the idea, not by habit:
 
 - contrast: TWO things compared side by side — old vs new, A vs B, the wrong way vs the right way.
 - layers: a STACKED architecture or a boundary between planes — tiers, build-plane over operate-plane, a trust boundary.
@@ -20,6 +20,7 @@ You receive the article (title, excerpt, body text) and a menu of 16 diagram tem
 - quadrant: a 2x2 POSITIONING MATRIX with two named axes — where to be vs not be, plotted on two dimensions.
 - pyramid: a HIERARCHY of tiers, wide base to narrow apex — a maturity model, a hierarchy of needs/value.
 - venn: an INTERSECTION of two things — where human + AI overlap, the shared zone between two domains.
+- venn3: an INTERSECTION of THREE things — what all three share at the center (the sweet spot), with optional pairwise overlaps.
 - table: a CRITERIA × OPTIONS comparison — rows of attributes scored across 2-3 options (yes/no, short cells).
 - pipeline: a LINEAR left→right process — a production line of stages, each with one job (NOT a loop; use cycle for loops).
 - radial: a CENTRAL hub with radiating members — an ecosystem, a data spine every tool plugs into, dependencies around a core.
@@ -28,7 +29,7 @@ You receive the article (title, excerpt, body text) and a menu of 16 diagram tem
 
 RULES — follow all of them:
 1. Design 3-4 figures (5 only for very long articles).
-2. USE A WIDE VARIETY OF SHAPES from the FULL menu of 16 above. A strong set uses 3-4 DIFFERENT templates and reaches beyond the obvious contrast+columns — if the article has a number worth enlarging use bigstat, a process use pipeline/cycle, a maturity arc use pyramid/progression, two dimensions use quadrant, a shared zone use venn, a sequence in time use timeline, a hub use radial. Do NOT repeat a template in one set unless the article genuinely contains two separate instances of that exact shape.
+2. USE A WIDE VARIETY OF SHAPES from the FULL menu of 17 above. A strong set uses 3-4 DIFFERENT templates and reaches beyond the obvious contrast+columns — if the article has a number worth enlarging use bigstat, a process use pipeline/cycle, a maturity arc use pyramid/progression, two dimensions use quadrant, a shared zone use venn, a sequence in time use timeline, a hub use radial. Do NOT repeat a template in one set unless the article genuinely contains two separate instances of that exact shape.
 3. Map the article's KEY MOVES to templates: the central comparison, the mechanism/architecture, the process or loop, the breakdown of parts, the headline number, the maturity arc. Build one figure per real move — pick the shape that fits that move best.
 4. For EACH figure, set "anchor": copy a SHORT EXACT phrase (6-12 words) from the article body, VERBATIM (same words, same order), marking the sentence that figure illustrates. The figure is placed right after that sentence. Choose anchors SPREAD ACROSS the article — intro, middle, and later sections — NEVER all near the top. Two figures must not share an anchor.
 5. Mark exactly ONE figure "featured": true — the one that best captures the article's central idea (usually the main mechanism or the core comparison).
@@ -78,7 +79,7 @@ export function buildArticleBrief({ title = '', body = '', design = 'auto' } = {
 
   if (d === 'all') {
     return [
-      'Make ONE figure for EACH of the 16 templates below — a showcase of every shape for this article. Reuse the same few extracted points across shapes where natural to keep token use low. Anchors are not needed for a showcase.',
+      'Make ONE figure for EACH of the 17 templates below — a showcase of every shape for this article. Reuse the same few extracted points across shapes where natural to keep token use low. Anchors are not needed for a showcase.',
       '', 'TEMPLATES (name: slots):', FIGURE_TEMPLATE_NAMES.map(slotLine).join('\n'),
       '', article,
       '', 'Produce JSON: { "figures": [ { "template": "<name>", "slots": { … } }, … one per template … ] }',
