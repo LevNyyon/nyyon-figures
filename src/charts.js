@@ -1028,6 +1028,7 @@ export const CHART_TEMPLATES = {
         else p.push(`<rect x="${cx - r}" y="${baseY - 2 * r}" width="${2 * r}" height="${2 * r}" fill="${fill}"/>`);
         p.push(label(cx, baseY + 36, it.label, { size: fit(it.label, Math.max(120, 2 * r), 17), fill: INK, weight: hot ? 700 : 500 }));
         p.push(label(cx, baseY + 60, fmt(it.value, slots.unit), { size: 15, fill: hot ? ACCENT : MUTE, mono: true, weight: 700 }));
+        x += 2 * r + gap; // advance past this shape — without this every circle overprints the first
       });
       p.push(`<line x1="90" y1="${baseY}" x2="${W - 90}" y2="${baseY}" stroke="${INK}" stroke-width="2.5"/>`);
       p.push(caption(slots.caption));
