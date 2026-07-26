@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // nyyon-figures — a local MCP server that renders editorial diagrams and featured
-// covers from a spec, for any brand. It ships: the TEMPLATES (17 diagram shapes +
+// covers from a spec, for any brand. It ships: the TEMPLATES (17 diagram shapes + 20 data charts +
 // a cover, optionally animated as SVG), the global SETTINGS (paper/ink + one
 // accent; neutral defaults,
 // re-themeable at startup/runtime), and the REASONING prompt (article → figures).
@@ -62,7 +62,7 @@ function jsonContent(obj) {
 }
 
 const server = new McpServer(
-  { name: 'nyyon-figures', version: '0.4.0' },
+  { name: 'nyyon-figures', version: '0.5.0' },
   {
     instructions:
       'Two ways in. (1) ARTICLE → figures: call figures_for_article (article text + a `design`: "auto" | "all" | "cover" | a template name); it returns a short brief — follow it, then call render_set / render_cover. (2) AD-HOC one-off ("make a venn of X and Y overlapping Z", "a 3-step pipeline of A→B→C"): skip the article flow — map the request to a template + slots (see list_templates) and call render_figure directly. Adjust the global look anytime with set_theme (colors/fonts/brand) — it applies to all later renders. For an ANIMATED figure (entrance/exit + motion, looping, no JS), pass format:"svg" + animate:true to render_figure/render_set — it writes a .svg the browser animates; PNG output is always a static frame. ALWAYS show every rendered figure inline in the chat; never just report paths.',
@@ -75,7 +75,7 @@ server.registerTool(
   {
     title: 'List figure templates',
     description:
-      'List every diagram template (17) and the featured cover with their slot schemas. Call this first to learn what shapes exist and exactly which slots each render tool expects.',
+      'List every template — 17 diagrams (story shapes), 20 data charts (chart_*, real numbers on real scales) — and the featured cover, with their slot schemas. Call this first to learn what shapes exist and exactly which slots each render tool expects.',
     inputSchema: {},
   },
   async () => jsonContent({

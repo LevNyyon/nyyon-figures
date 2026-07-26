@@ -20,6 +20,7 @@
 // there to re-theme. The accent is a single token used as a signal.
 
 import { PAPER, INK, MUTE, LINE, CARDHI, ACCENT, ACCENT_WASH, SANS, MONO, W, H, BRAND_NAME, BRAND_URL, BRAND_MARK } from './settings.js';
+import { CHART_TEMPLATES } from './charts.js';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function esc(s) {
@@ -713,6 +714,8 @@ export const FIGURE_TEMPLATES = {
       return p.join('');
     },
   },
+  // ── data charts (Datawrapper-guide types; see charts.js) ──────────────────
+  ...CHART_TEMPLATES,
 };
 
 export const FIGURE_TEMPLATE_NAMES = Object.keys(FIGURE_TEMPLATES);

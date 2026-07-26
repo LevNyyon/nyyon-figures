@@ -17,6 +17,10 @@ Use the **nyyon-figures** MCP tools to turn an article into a set of editorial d
 2. Follow the returned brief to produce the JSON spec, then call `render_set` (or `render_cover`).
 3. **Show every rendered PNG in the chat.** Then place each figure after its anchor sentence and use the cover as featured / `og:image`.
 
+## Data charts
+
+When the user has REAL NUMBERS (a table, a survey, metrics, a time series), use the `chart_*` templates — 20 data-chart shapes chosen by goal: change over time (`chart_line`, `chart_multiples`, `chart_area`, `chart_column`, `chart_slope`, `chart_arrow`), shares (`chart_bar`, `chart_pie`, `chart_parliament`, `chart_waffle`, `chart_treemap`, `chart_marimekko`, `chart_bar_stacked`), amounts (`chart_bar`, `chart_bar_grouped`, `chart_bar_split`, `chart_dot`, `chart_prop_area`), relationships (`chart_scatter`, `chart_heatmap`), flows (`chart_sankey`). The reasoning prompt from `figures_for_article` carries the full when-to-use-which guide (bars beat pies; few time points = columns, many = lines; never invent numbers; no geo maps offline). For a direct request ("chart these numbers"), pick by goal and call `render_figure` with the data in the slots.
+
 ## Ad-hoc one-off
 
 For a direct request like *"a venn of X and Y overlapping Z"* or *"a 3-step pipeline A→B→C"*, skip the article flow: map it to a template + slots (see `list_templates`) and call `render_figure` directly, then show the PNG. For a three-way overlap use `venn3`.
