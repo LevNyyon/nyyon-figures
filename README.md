@@ -30,14 +30,38 @@ For when the idea is backed by **real numbers**. Organized by goal, following [D
 
 Chart craft is enforced in the renderers, not requested of the caller: bars, columns, areas and waffles always start at zero; line ends and bar ends are labeled directly instead of via legends; bubbles and proportional shapes scale by **area**, never radius; small multiples share one scale; empty or flat data renders a clean labeled frame, never a NaN SVG. Geo maps are deliberately absent (an offline renderer has no shape data): reach for `chart_bar` or `chart_heatmap` by region instead.
 
-### Showcase
+## Showcase — every template
+
+One render of each shape, so you can pick by eye. All drawn by this tool, default theme.
+
+### Diagrams
 
 | | |
 |---|---|
-| ![line](docs/showcase/chart_line.png) | ![bar](docs/showcase/chart_bar.png) |
-| ![sankey](docs/showcase/chart_sankey.png) | ![heatmap](docs/showcase/chart_heatmap.png) |
-| ![treemap](docs/showcase/chart_treemap.png) | ![multiples](docs/showcase/chart_multiples.png) |
-| ![slope](docs/showcase/chart_slope.png) | ![waffle](docs/showcase/chart_waffle.png) |
+| ![contrast](docs/showcase/contrast.png) | ![layers](docs/showcase/layers.png) |
+| ![cycle](docs/showcase/cycle.png) | ![fanout](docs/showcase/fanout.png) |
+| ![columns](docs/showcase/columns.png) | ![grid](docs/showcase/grid.png) |
+| ![funnel](docs/showcase/funnel.png) | ![timeline](docs/showcase/timeline.png) |
+| ![quadrant](docs/showcase/quadrant.png) | ![pyramid](docs/showcase/pyramid.png) |
+| ![venn](docs/showcase/venn.png) | ![venn3](docs/showcase/venn3.png) |
+| ![table](docs/showcase/table.png) | ![pipeline](docs/showcase/pipeline.png) |
+| ![radial](docs/showcase/radial.png) | ![bigstat](docs/showcase/bigstat.png) |
+| ![progression](docs/showcase/progression.png) | |
+
+### Data charts
+
+| | |
+|---|---|
+| ![line](docs/showcase/chart_line.png) | ![multiples](docs/showcase/chart_multiples.png) |
+| ![area](docs/showcase/chart_area.png) | ![column](docs/showcase/chart_column.png) |
+| ![slope](docs/showcase/chart_slope.png) | ![arrow](docs/showcase/chart_arrow.png) |
+| ![bar](docs/showcase/chart_bar.png) | ![bar stacked](docs/showcase/chart_bar_stacked.png) |
+| ![bar grouped](docs/showcase/chart_bar_grouped.png) | ![bar split](docs/showcase/chart_bar_split.png) |
+| ![dot](docs/showcase/chart_dot.png) | ![pie](docs/showcase/chart_pie.png) |
+| ![parliament](docs/showcase/chart_parliament.png) | ![waffle](docs/showcase/chart_waffle.png) |
+| ![treemap](docs/showcase/chart_treemap.png) | ![marimekko](docs/showcase/chart_marimekko.png) |
+| ![scatter](docs/showcase/chart_scatter.png) | ![heatmap](docs/showcase/chart_heatmap.png) |
+| ![sankey](docs/showcase/chart_sankey.png) | ![prop area](docs/showcase/chart_prop_area.png) |
 
 ## Animation
 
