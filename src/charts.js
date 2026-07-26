@@ -89,9 +89,17 @@ function fmt(v, unit = '') {
 // A pleasant tick scale over [rawMin, rawMax]. zero=true clamps the floor to 0
 // (bars/columns/areas — length encodes the value, so the base must be zero).
 function niceScale(rawMin, rawMax, { zero = false, ticks = 4 } = {}) {
+  // Degenerate inputs (empty data → ±Infinity, or an all-equal flat series)
+  // must still yield a sane scale — a NaN SVG renders as a blank chart and,
+  // worse, can get published. Pad a flat span instead of overprinting ticks.
+  if (!Number.isFinite(rawMin) || !Number.isFinite(rawMax)) { rawMin = 0; rawMax = 1; }
+  if (rawMax - rawMin < 1e-9) {
+    const pad = Math.max(1, Math.abs(rawMin) * 0.1);
+    rawMax = rawMin + pad;
+    if (!zero) rawMin -= pad;
+  }
   let min = zero ? Math.min(0, rawMin) : rawMin;
-  let max = Math.max(rawMax, min + 1e-9);
-  if (min === max) { max = min + 1; }
+  let max = rawMax;
   const span = max - min;
   const step0 = span / ticks;
   const mag = Math.pow(10, Math.floor(Math.log10(step0)));
@@ -147,6 +155,13 @@ function hexLerp(a, b, t) {
   return `#${((ch(16) << 16) | (ch(8) << 8) | ch(0)).toString(16).padStart(6, '0')}`;
 }
 
+// Close out an empty-data chart as a clean labeled frame instead of NaN SVG.
+function emptyFrame(p, slots) {
+  p.push(caption(slots.caption));
+  p.push('</svg>');
+  return p.join('');
+}
+
 // Standard plot frame: [PL..W-PR] x [PT..PB].
 const PT = 110, PB = 560, PL = 118, PRD = 70;
 
@@ -163,6 +178,7 @@ export const CHART_TEMPLATES = {
         .map((s) => ({ name: String(s.name || ''), values: (s.values || []).slice(0, xs.length).map(num) }));
       const p = svgOpen();
       p.push(figLabel(slots.fig_label));
+      if (!xs.length || !series.length || series.every((s) => !s.values.length)) return emptyFrame(p, slots);
       const PR = 210; // room for direct end labels — no legend
       const all = series.flatMap((s) => s.values);
       const sc = niceScale(Math.min(...all), Math.max(...all), { ticks: 4 });
@@ -198,6 +214,7 @@ export const CHART_TEMPLATES = {
         .map((s) => ({ name: String(s.name || ''), values: (s.values || []).slice(0, 24).map(num) }));
       const p = svgOpen();
       p.push(figLabel(slots.fig_label));
+      if (!series.length || series.every((s) => !s.values.length)) return emptyFrame(p, slots);
       const n = series.length || 1;
       const C = n <= 3 ? n : Math.ceil(n / 2);
       const R = n <= 3 ? 1 : 2;
@@ -239,6 +256,7 @@ export const CHART_TEMPLATES = {
       const mode = ['stacked', 'share', 'stream'].includes(slots.mode) ? slots.mode : 'stacked';
       const p = svgOpen();
       p.push(figLabel(slots.fig_label));
+      if (!xs.length || !series.length) return emptyFrame(p, slots);
       const PR = 200;
       const nPts = xs.length;
       // column totals → per-mode band geometry
@@ -292,6 +310,7 @@ export const CHART_TEMPLATES = {
       const mode = slots.mode === 'stacked' ? 'stacked' : 'grouped';
       const p = svgOpen();
       p.push(figLabel(slots.fig_label));
+      if (!xs.length || !series.length) return emptyFrame(p, slots);
       const PR = PRD;
       const stacked = series.length > 1 && mode === 'stacked';
       const tops = xs.map((_, j) => (stacked
@@ -349,6 +368,7 @@ export const CHART_TEMPLATES = {
         .map((it) => ({ label: String(it.label || ''), start: num(it.start), end: num(it.end) }));
       const p = svgOpen();
       p.push(figLabel(slots.fig_label));
+      if (!items.length) return emptyFrame(p, slots);
       const x0 = 360, x1 = W - 360;
       const all = items.flatMap((it) => [it.start, it.end]);
       const sc = niceScale(Math.min(...all), Math.max(...all), { ticks: 3 });
@@ -393,6 +413,7 @@ export const CHART_TEMPLATES = {
         .map((it) => ({ label: String(it.label || ''), from: num(it.from), to: num(it.to) }));
       const p = svgOpen();
       p.push(figLabel(slots.fig_label));
+      if (!items.length) return emptyFrame(p, slots);
       const x0 = 330, x1 = W - 90;
       const all = items.flatMap((it) => [it.from, it.to]);
       const sc = niceScale(Math.min(...all), Math.max(...all), { ticks: 4 });
@@ -573,6 +594,7 @@ export const CHART_TEMPLATES = {
         .map((r) => ({ label: String(r.label || ''), values: (r.values || []).slice(0, Math.max(1, legend.length)).map(num) }));
       const p = svgOpen();
       p.push(figLabel(slots.fig_label));
+      if (!rows.length || rows.every((r) => !r.values.length)) return emptyFrame(p, slots);
       const x0 = 330, x1 = W - 110;
       const all = rows.flatMap((r) => r.values);
       const sc = niceScale(Math.min(...all), Math.max(...all), { ticks: 4 });
@@ -847,6 +869,7 @@ export const CHART_TEMPLATES = {
         .map((q) => ({ x: num(q.x), y: num(q.y), label: q.label ? String(q.label) : '', size: q.size !== undefined ? Math.max(0, num(q.size)) : null, hot: !!q.hot }));
       const p = svgOpen();
       p.push(figLabel(slots.fig_label));
+      if (!pts.length) return emptyFrame(p, slots);
       const X0 = 150, X1 = W - 90, Y0 = PB, Y1 = PT + 10;
       const sx = niceScale(Math.min(...pts.map((q) => q.x)), Math.max(...pts.map((q) => q.x)), { ticks: 4 });
       const sy = niceScale(Math.min(...pts.map((q) => q.y)), Math.max(...pts.map((q) => q.y)), { ticks: 4 });
@@ -889,6 +912,7 @@ export const CHART_TEMPLATES = {
       const rows = (slots.values || []).slice(0, ys.length).map((r) => (r || []).slice(0, xs.length).map(num));
       const p = svgOpen();
       p.push(figLabel(slots.fig_label));
+      if (!xs.length || !ys.length || !rows.flat().length) return emptyFrame(p, slots);
       const X = 300, Y = 130, MW2 = W - 400, MH2 = 420;
       const cw = MW2 / Math.max(1, xs.length), ch = MH2 / Math.max(1, ys.length);
       const all = rows.flat();
@@ -928,6 +952,7 @@ export const CHART_TEMPLATES = {
         .map((f) => ({ from: String(f.from || ''), to: String(f.to || ''), value: Math.max(0.0001, num(f.value)) }));
       const p = svgOpen();
       p.push(figLabel(slots.fig_label));
+      if (!flows.length) return emptyFrame(p, slots);
       const X0 = 320, X1 = W - 320, Y = 120, MH3 = 440, NW = 26, GAPN = 18;
       const lefts = [...new Set(flows.map((f) => f.from))];
       const rights = [...new Set(flows.map((f) => f.to))];
